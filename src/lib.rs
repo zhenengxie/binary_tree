@@ -19,7 +19,7 @@ impl<T: Ord> TreeNode<T> {
     fn min(&self) -> &T {
         match &self.left.0 {
             None => &self.val,
-            Some(left) => left.max(),
+            Some(left) => left.min(),
         }
     }
 }
@@ -52,6 +52,15 @@ impl<T: Ord> Tree<T> {
     /// ```
     pub fn is_empty(&self) -> bool {
         matches!(self, Tree(None))
+    }
+
+    pub fn len(&self) -> usize {
+        match &self.0 {
+            None => 0,
+            Some(tree_node) => {
+                1 + tree_node.left.len() + tree_node.right.len()
+            }
+        }
     }
 
     /// Checks if the tree contains the value when given a reference
@@ -123,7 +132,7 @@ impl<T: Ord> Tree<T> {
 
             Some(val)
         } else {
-            tree_node.left.pop_max()
+            tree_node.left.pop_min()
         }
     }
 
@@ -251,23 +260,95 @@ mod tests {
 
     proptest! {
         #[test]
-        fn inserting_into_empty_tree(n in -1000i32..1000) {
-            let mut tree = Tree(None);
+        fn from_vec_contains_all_vec_elements(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let tree = Tree::from_vector(vec.clone());
+            prop_assert!(vec.iter().all(|num| tree.contains(num)));
+        }
+
+        #[test]
+        fn inorder_returns_elements_in_correct_order(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let tree = Tree::from_vector(vec.clone());
+            let mut sorted_vec = vec;
+            sorted_vec.sort();
+            sorted_vec.dedup();
+
+            let tree_inorder_vec: Vec<i32>
+                = tree.iter().cloned().collect();
+
+            prop_assert_eq!(tree_inorder_vec, sorted_vec);
+        }
+
+        #[test]
+        fn max(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let tree = Tree::from_vector(vec.clone());
+            prop_assert_eq!(tree.max(), vec.iter().max());
+        }
+
+        #[test]
+        fn min(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let tree = Tree::from_vector(vec.clone());
+            prop_assert_eq!(tree.min(), vec.iter().min());
+        }
+
+        #[test]
+        fn popmax(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let mut tree = Tree::from_vector(vec.clone());
+            let tree_max = tree.pop_max();
+            let vec_max = vec.iter().cloned().max();
+
+            prop_assert_eq!(tree_max, vec_max);
+
+            if let Some(val) = tree_max {
+                prop_assert!(!tree.contains(&val));
+            };
+        }
+
+        #[test]
+        fn popmin(
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let mut tree = Tree::from_vector(vec.clone());
+            let tree_min = tree.pop_min();
+            let vec_min = vec.iter().cloned().min();
+
+            prop_assert_eq!(tree_min, vec_min);
+
+            if let Some(val) = tree_min {
+                prop_assert!(!tree.contains(&val));
+            };
+        }
+
+        #[test]
+        fn insertion(
+            n in -1000..1000i32,
+            vec in proptest::collection::vec(-1000..1000, 0..100)
+        ) {
+            let mut tree = Tree::from_vector(vec);
             tree.insert(n);
             prop_assert!(tree.contains(&n));
         }
 
         #[test]
-        fn insertion_then_deletion_from_empty_tree(n in -1000i32..1000) {
-            let mut tree = Tree(None);
+        fn insertion_then_deletion(n in -1000..1000i32,  vec in proptest::collection::vec(-1000..1000, 0..100)) {
+            let mut tree = Tree::from_vector(vec);
             tree.insert(n);
             tree.delete(&n);
             prop_assert!(!tree.contains(&n));
         }
 
         #[test]
-        fn double_insertion_then_deletion_from_empty_tree(n in -1000i32..1000) {
-            let mut tree = Tree(None);
+        fn double_insertion_then_deletion(n in -1000..1000i32,  vec in proptest::collection::vec(-1000..1000, 0..100)) {
+            let mut tree = Tree::from_vector(vec);
             tree.insert(n);
             tree.insert(n);
             tree.delete(&n);

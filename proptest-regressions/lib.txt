@@ -5,3 +5,4 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 0a52c19f05cbf7d66dc06c23e4c947efc9f0af3323c1487dab7cdeb4fe92ae1b # shrinks to n = 0
+cc 7e52cfe57660033c253a24f0642e24e94b3f4484c90762d9189ce01c2cb3a5de # shrinks to vec = [-940, -940]
